@@ -58,7 +58,7 @@ const ArtisanSchema = new mongoose.Schema({
   // Ratings and Reviews
   averageRating: {
     type: Number,
-    min: 1,
+    min: 0,
     max: 5,
     default: 0,
   },
