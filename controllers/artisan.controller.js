@@ -1,7 +1,14 @@
-const mongoose = require('mongoose');
+const bcrypt = require('bcrypt');
+const jwt = require('jsonwebtoken');
 const validator = require('validator')
 const Artisan = require('../models/artisanModel');
 
+// Create token
+const createToken = (_id) => {
+  return jwt.sign({_id}, process.env.SECRET, { expiresIn: '7d' })
+}
+
+// Register Artisan
 const registerArtisan = async (req, res) => {
   const { fullName, phone, email, password, serviceType, location } = req.body;
 
@@ -20,12 +27,35 @@ const registerArtisan = async (req, res) => {
 
   try {
     await Artisan.create({fullName, phone, email, password, serviceType, location});
-    res.status(200).json({"message": "Account created successfully!"})
+    res.status(200).json({message: "Account created successfully!"})
   } catch (error) {
     res.status(400).json({error: error.message})
   }
-}
+};
+
+const loginArtisan = async (req, res) => {
+  const { email, password } = req.body;
+
+  if (!email || !password) return res.status(400).json({message: "Please fill in all fields!!!"});
+
+  const artisan = Artisan.findOne({ email });
+
+  if (!artisan) return res.status(400).json({message: "Incorrect email"});
+
+  const match = await bcrypt.compare(password, user.password);
+
+  if (!match) return res.status(400).json({message: "Incorrect password"});
+
+  try {
+    // create token
+    const token = createToken(user._id);
+    res.status(200).json({email, token})
+  } catch (error) { 
+    res.status(400).json({error: error.message})
+  }
+};
 
 module.exports = {
-  registerArtisan
+  registerArtisan,
+  loginArtisan
 };
