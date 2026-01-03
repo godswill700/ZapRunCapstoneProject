@@ -3,7 +3,6 @@ const { registerArtisan, loginArtisan } = require('../controllers/artisan.contro
 
 const router = express.Router();
 
-
 // signup route
 router.post('/signup', registerArtisan);
 
