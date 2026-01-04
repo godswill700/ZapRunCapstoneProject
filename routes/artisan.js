@@ -1,5 +1,5 @@
 const express = require('express');
-const { registerArtisan, loginArtisan } = require('../controllers/artisan.controller')
+const { registerArtisan, loginArtisan, verifyArtisanEmail } = require('../controllers/artisan.controller')
 
 const router = express.Router();
 
@@ -9,13 +9,7 @@ router.post('/signup', registerArtisan);
 // login route
 router.post('/login', loginArtisan);
 
-module.exports = router
+// Verify email route
+router.post('/verify-email', verifyArtisanEmail);
 
-// {
-//   "fullName": "Jesse Pinkman",
-//   "phone": "08012345678",
-//   "email": "legit.com",
-//   "password": "123Te",
-//   "serviceType": "plumber",
-//   "location": "Abuja, Nigeria"
-// }
+module.exports = router
