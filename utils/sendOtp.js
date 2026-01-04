@@ -24,10 +24,7 @@ const sendOtp = async (email, res) => {
     // Send Mail
     await transporter.sendMail(mailOptions);
 
-    // To be removed
-    console.log(`Otp sent to ${email}`);
-
-    res.status(200).json({ message: `Verification OTP sent to ${email}` });
+    res.status(200).json({ message: `Verification OTP sent to ${email}`, data: email });
   } catch (error) {
     res.status(400).json({ error: error.message });
   }  
