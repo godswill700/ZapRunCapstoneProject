@@ -43,7 +43,7 @@ const ArtisanSchema = new mongoose.Schema({
     default: [],
   },
   // Verification
-  emailVerification: {
+  isEmailVerified: {
     type: Boolean,
     deafult: false
   },
