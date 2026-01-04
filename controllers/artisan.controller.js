@@ -2,6 +2,7 @@ const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const validator = require('validator')
 const Artisan = require('../models/artisanModel');
+const sendOtp = require('../utils/sendOtp');
 
 // Create token
 const createToken = (_id) => {
@@ -26,8 +27,9 @@ const registerArtisan = async (req, res) => {
   if (exists) res.status(400).json({message: 'Email already in use'});
 
   try {
-    await Artisan.create({fullName, phone, email, password, serviceType, location});
-    res.status(200).json({message: "Account created successfully!"})
+    const artisan = await Artisan.create({fullName, phone, email, password, serviceType, location});
+    
+    sendOtp(artisan.email, res);
   } catch (error) {
     res.status(400).json({error: error.message})
   }
