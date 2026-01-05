@@ -8,7 +8,7 @@ const router = express.Router();
 router.post('/signup', registerArtisan);
 
 // resend otp for route
-router.post('resend-otp', resendOtp);
+router.post('/resend-otp', resendOtp);
 
 // login route
 router.post('/login', loginArtisan);
