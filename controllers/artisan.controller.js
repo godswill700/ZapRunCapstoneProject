@@ -36,9 +36,26 @@ const registerArtisan = async (req, res) => {
   }
 };
 
+// Resend Otp for email verification
+const resendOtp = async (req, res) => {
+  const { email } = req.body;
+
+  if (!email) return res.status(400).json({ message: "Email is missing" });
+
+  try {
+    // delete any otp record before resending otp
+    await Otp.deleteMany({ email });
+
+    await sendOtp(email, res);
+  } catch (error) {
+    res.status(400).json({error: error.message});
+  }
+};
+
 // Verify Artisan's Email
 const verifyArtisanEmail = async (req, res) => {
   const { email, otp } = req.body;
+
   try {
     if (!email || !otp) return res.status(400).json({message: "Please fill in OTP fields!!!"});
   
@@ -64,7 +81,7 @@ const verifyArtisanEmail = async (req, res) => {
   } catch (error) {
     res.status(400).json({error: error.message})
   }
-}
+};
 
 // Login Artisan
 const loginArtisan = async (req, res) => {
@@ -91,6 +108,7 @@ const loginArtisan = async (req, res) => {
 
 module.exports = {
   registerArtisan,
+  resendOtp,
+  verifyArtisanEmail,
   loginArtisan,
-  verifyArtisanEmail
 };

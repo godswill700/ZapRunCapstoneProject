@@ -1,10 +1,13 @@
 const express = require('express');
-const { registerArtisan, loginArtisan, verifyArtisanEmail } = require('../controllers/artisan.controller')
+const { registerArtisan, resendOtp, loginArtisan, verifyArtisanEmail } = require('../controllers/artisan.controller');
 
 const router = express.Router();
 
 // signup route
 router.post('/signup', registerArtisan);
+
+// resend otp for route
+router.post('resned-otp', resendOtp);
 
 // login route
 router.post('/login', loginArtisan);
