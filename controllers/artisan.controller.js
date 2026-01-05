@@ -4,6 +4,7 @@ const validator = require('validator')
 const Artisan = require('../models/artisanModel');
 const Otp = require('../models/otpModel');
 const sendOtp = require('../utils/sendOtp');
+const { uploadToCloudinary } = require('../middleware/workSamplesUpload')
 
 // Create token
 const createToken = (_id) => {
@@ -106,9 +107,40 @@ const loginArtisan = async (req, res) => {
   }
 };
 
+// Onboarding
+const onboarding = async (req, res) => {
+  const { email, bio, experienceYears, location } = req.body;
+
+  try {
+    if (!email || !bio || !experienceYears || !location) return res.status(400).json({ message: "All fields are required" });
+
+    // Upload images to Cloudinary
+    let uploadedImages = [];
+    for (let file of req.files) {
+      const imageUrl = await uploadToCloudinary(file.buffer);
+      uploadedImages.push(imageUrl);
+    }
+
+    const updatedArtisan = await Artisan.findOneAndUpdate(
+      { email },
+      { bio, experienceYears, location, workSamples: uploadedImages },
+      { new: true }
+    );
+
+    if (!updatedArtisan) {
+      return res.status(404).json({ error: "Artisan not found" });
+    }
+
+    res.status(200).json({ success: true, message: "Onboarding successful" });
+  } catch (error) {
+    res.status(400).json({error: `This is the error ${error.message}`})
+  }
+}
+
 module.exports = {
   registerArtisan,
   resendOtp,
   verifyArtisanEmail,
   loginArtisan,
+  onboarding
 };
