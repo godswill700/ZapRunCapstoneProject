@@ -2,12 +2,20 @@ const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const validator = require('validator');
 const Admin = require('../models/adminModel');
+const Artisan = require('../models/artisanModel');
 const Otp = require('../models/otpModel');
 const sendOtp = require('../utils/sendOtp');
 
 // Create token
 const createToken = (_id) => {
   return jwt.sign({_id}, process.env.SECRET, { expiresIn: '2d' })
+}
+
+// Get all Admins
+const getArtisans = async (req, res) => {
+  const artisans = await Artisan.find({}).sort({fullName: 1});
+
+  res.status(200).json(artisans);
 }
 
 // Register admin
@@ -106,5 +114,6 @@ module.exports = {
   registerAdmin,
   resendOtp,
   verifyEmail,
-  loginAdmin
+  loginAdmin,
+  getArtisans
 };

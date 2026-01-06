@@ -1,8 +1,11 @@
 const express = require('express');
-const { registerAdmin, resendOtp, verifyEmail, loginAdmin } = require('../controllers/admin.controller');
+const { registerAdmin, resendOtp, verifyEmail, loginAdmin, getArtisans } = require('../controllers/admin.controller');
 
 const router = express.Router();
 
+router.get('/get-artisans', getArtisans)
+
+// Authentication Routes
 // signup route
 router.post('/signup', registerAdmin);
 
