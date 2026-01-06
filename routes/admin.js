@@ -14,3 +14,5 @@ router.post('/login', loginAdmin);
 
 // Verify email route
 router.post('/verify-email', verifyEmail);
+
+module.exports = router
