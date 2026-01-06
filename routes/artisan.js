@@ -1,8 +1,10 @@
 const express = require('express');
-const { registerArtisan, resendOtp, loginArtisan, verifyArtisanEmail, onboarding } = require('../controllers/artisan.controller');
+const { registerArtisan, resendOtp, loginArtisan, verifyArtisanEmail, onboarding, getAccDetails } = require('../controllers/artisan.controller');
 const { upload } = require('../middleware/workSamplesUpload')
 
 const router = express.Router();
+
+router.get('/:id', getAccDetails);
 
 // signup route
 router.post('/signup', registerArtisan);

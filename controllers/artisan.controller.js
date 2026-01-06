@@ -1,4 +1,5 @@
 const bcrypt = require('bcrypt');
+const mongoose = require('mongoose');
 const jwt = require('jsonwebtoken');
 const validator = require('validator')
 const Artisan = require('../models/artisanModel');
@@ -9,6 +10,23 @@ const { uploadToCloudinary } = require('../middleware/workSamplesUpload')
 // Create token
 const createToken = (_id) => {
   return jwt.sign({_id}, process.env.SECRET, { expiresIn: '2d' })
+}
+
+// Get Account Details
+const getAccDetails = async (req, res) => {
+  const { id } = req.params;
+
+  if (!mongoose.Types.ObjectId.isValid(id)) {
+    return res.status(404).json({message: 'No such artisan'})
+  }
+
+  const artisan = await Artisan.findById(id);
+
+  if (!artisan) {
+    return res.status(404).json({message: 'No such artisan'})
+  }
+
+  res.status(200).json(artisan);
 }
 
 // Register Artisan
@@ -142,5 +160,6 @@ module.exports = {
   resendOtp,
   verifyArtisanEmail,
   loginArtisan,
-  onboarding
+  onboarding,
+  getAccDetails
 };
