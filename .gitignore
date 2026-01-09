@@ -1,2 +1,7 @@
 node_modules
 .env
+# Temporal Commits
+job.controller.js
+chat.controller.js
+Job.js
+chatModel.js
