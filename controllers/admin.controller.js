@@ -9,14 +9,14 @@ const sendOtp = require('../utils/sendOtp');
 // Create token
 const createToken = (_id) => {
   return jwt.sign({_id}, process.env.SECRET, { expiresIn: '2d' })
-}
+};
 
-// Get all Admins
+// Get all Artisans
 const getArtisans = async (req, res) => {
   const artisans = await Artisan.find({}).sort({fullName: 1});
 
   res.status(200).json(artisans);
-}
+};
 
 // Register admin
 const registerAdmin = async (req, res) => {
@@ -87,7 +87,7 @@ const verifyEmail = async (req, res) => {
   }
 };
 
-// Login Artisan
+// Login Admin
 const loginAdmin = async (req, res) => {
   const { email, password } = req.body;
 
