@@ -90,6 +90,11 @@ const loginUser = async (req, res) => {
 
     if (!user) return res.status(400).json({message: "Incorrect email"});
 
+    const isMatch = await user.matchPassword(password);
+    if (!isMatch) {
+      return res.status(401).json({ message: "Invalid credentials" });
+    };
+
     // create token
     const token = createToken(user._id);
     res.status(200).json({email, token})
