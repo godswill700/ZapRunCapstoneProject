@@ -17,9 +17,9 @@ const userSchema = new mongoose.Schema({
     minlength: 8,
     select: false,
   },
-  isActive: {
+  isVerified: {
     type: Boolean,
-    default: true,
+    default: false,
   },
   createdAt: {
     type: Date,
