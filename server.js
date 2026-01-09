@@ -4,6 +4,8 @@ const cors = require('cors');
 const connectDB = require('./config/db');
 const adminRoutes = require('./routes/admin');
 const artisanRoutes = require('./routes/artisan');
+const userRoutes = require('./routes/user');
+const chatRoutes = require('./routes/chat');
 
 const app = express();
 
@@ -17,5 +19,7 @@ app.use((req, res, next) => {
 
 app.use('/api/artisan', artisanRoutes);
 app.use('/api/admin', adminRoutes);
+app.use('/api/user', userRoutes);
+app.use('/api/chat', chatRoutes);
 
 connectDB(app);
