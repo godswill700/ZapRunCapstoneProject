@@ -1,129 +1,219 @@
-const Artisan = require("../models/Artisan");
-const jwt = require("jsonwebtoken");
+const bcrypt = require('bcrypt');
+const mongoose = require('mongoose');
+const jwt = require('jsonwebtoken');
+const validator = require('validator');
+const Artisan = require('../models/Artisan');
+const Otp = require('../models/OtpModel');
+const sendOtp = require('../utilities/sendOtp');
+const { uploadToCloudinary } = require('../middlewares/workSamplesUpload');
 
-// Generate JWT
-const generateToken = (id) => {
-  return jwt.sign({ id }, process.env.JWT_SECRET, {
-    expiresIn: process.env.JWT_EXPIRES_IN || "7d",
-  });
+// ---------------------- Helpers ----------------------
+
+// Create JWT token
+const createToken = (_id) => {
+  return jwt.sign({ _id }, process.env.SECRET, { expiresIn: '2d' });
 };
 
+// ---------------------- Controllers ----------------------
 
-//        Register ARTISAN
+// Register Artisan
+const createArtisan = async (req, res) => {
+  const { fullName, phone, email, password, serviceType, location } = req.body;
 
-exports.createArtisan = async (req, res) => {
   try {
-    const { email } = req.body;
-
-    // Prevent duplicate registration
-    const exists = await Artisan.findOne({ email });
-    if (exists) {
-      return res.status(400).json({ message: "Email already registered" });
+    if (!fullName || !phone || !email || !password || !serviceType || !location) {
+      return res.status(400).json({ message: 'All fields must be filled' });
     }
 
-    const artisan = await Artisan.create(req.body);
+    if (!validator.isEmail(email)) return res.status(400).json({ message: 'Email is not valid' });
+    if (!validator.isStrongPassword(password)) return res.status(400).json({ message: 'Password must include special characters, lowercase, uppercase and be minimum 8 characters' });
+
+    const exists = await Artisan.findOne({ email });
+    if (exists) return res.status(400).json({ message: 'Email already in use' });
+
+    const artisan = await Artisan.create({ fullName, phone, email, password, serviceType, location });
+
+    // Send OTP for email verification
+    await sendOtp(artisan.email, res);
 
     res.status(201).json({
-      message: "Artisan created. Awaiting verification.",
-      token: generateToken(artisan._id),
+      message: 'Artisan registered. Please verify your email.',
+      token: createToken(artisan._id),
       artisan: {
         id: artisan._id,
-        name: artisan.name,
+        name: artisan.fullName,
         email: artisan.email,
         serviceType: artisan.serviceType,
-        verified: artisan.verified,
-      },
+        verified: artisan.isEmailVerified || false
+      }
     });
-  } catch (err) {
-    res.status(400).json({
-      message: "Invalid artisan data",
-      error: err.message,
-    });
+  } catch (error) {
+    res.status(400).json({ error: error.message });
   }
 };
 
-//     LOGIN ARTISAN 
+// Login Artisan
+const loginArtisan = async (req, res) => {
+  const { email, password } = req.body;
 
-exports.loginArtisan = async (req, res) => {
   try {
-    const { email, password } = req.body;
+    if (!email || !password) return res.status(400).json({ message: 'Please fill in all fields' });
 
     const artisan = await Artisan.findOne({ email });
-    if (!artisan) {
-      return res.status(401).json({ message: "Invalid credentials" });
-    }
+    if (!artisan) return res.status(401).json({ message: 'Invalid credentials' });
 
     const isMatch = await artisan.matchPassword(password);
-    if (!isMatch) {
-      return res.status(401).json({ message: "Invalid credentials" });
-    }
+    if (!isMatch) return res.status(401).json({ message: 'Invalid credentials' });
+
+    const token = createToken(artisan._id);
 
     res.status(200).json({
-      message: "Login successful",
-      token: generateToken(artisan._id),
+      message: 'Login successful',
+      token,
       artisan: {
         id: artisan._id,
-        name: artisan.name,
+        name: artisan.fullName,
         email: artisan.email,
         serviceType: artisan.serviceType,
-        verified: artisan.verified,
-      },
+        verified: artisan.isEmailVerified || false
+      }
     });
-  } catch (err) {
-    res.status(500).json({ message: err.message });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
   }
 };
 
+// Verify Artisan Email
+const verifyArtisanEmail = async (req, res) => {
+  const { email, otp } = req.body;
 
-//      GET ALL VERIFIED ARTISANS
-
-exports.getArtisans = async (req, res) => {
   try {
-    const filter = { verified: true };
+    if (!email || !otp) return res.status(400).json({ message: 'Please fill in OTP fields' });
 
-    if (req.query.serviceType) filter.serviceType = req.query.serviceType;
-    if (req.query.city) filter["location.city"] = req.query.city;
+    const otpRecord = await Otp.find({ email });
+    if (!otpRecord.length) return res.status(400).json({ message: 'No OTP found or already verified' });
 
-    const artisans = await Artisan.find(filter).select("-password");
-    res.status(200).json(artisans);
-  } catch (err) {
-    res.status(500).json({
-      message: "Failed to fetch artisans",
-      error: err.message,
-    });
+    const validOtp = await bcrypt.compare(otp, otpRecord[0].otp);
+    if (!validOtp) return res.status(400).json({ message: 'Invalid OTP' });
+
+    await Artisan.updateOne({ email }, { isEmailVerified: true });
+    await Otp.deleteMany({ email });
+
+    const artisan = await Artisan.findOne({ email });
+    const token = createToken(artisan._id);
+
+    res.status(200).json({ email, token });
+  } catch (error) {
+    res.status(400).json({ error: error.message });
   }
 };
 
+// Resend OTP
+const resendOtp = async (req, res) => {
+  const { email } = req.body;
+  if (!email) return res.status(400).json({ message: 'Email is required' });
 
-//      GET Artisan by id
-
-exports.getArtisanById = async (req, res) => {
   try {
-    const artisan = await Artisan.findById(req.params.id).select("-password");
+    await Otp.deleteMany({ email });
+    await sendOtp(email, res);
+  } catch (error) {
+    res.status(400).json({ error: error.message });
+  }
+};
 
-    if (!artisan || !artisan.verified) {
-      return res.status(404).json({ message: "Artisan not found" });
+// Onboarding (upload work samples)
+const onboarding = async (req, res) => {
+  const { email, bio, experienceYears, location } = req.body;
+
+  try {
+    if (!email || !bio || !experienceYears || !location) {
+      return res.status(400).json({ message: 'All fields are required' });
     }
 
-    res.status(200).json(artisan);
-  } catch (err) {
-    res.status(500).json({
-      message: "Error fetching artisan",
-      error: err.message,
-    });
+    // Upload files to Cloudinary
+    const uploadedImages = [];
+    for (let file of req.files) {
+      const imageUrl = await uploadToCloudinary(file.buffer);
+      uploadedImages.push(imageUrl);
+    }
+
+    const updatedArtisan = await Artisan.findOneAndUpdate(
+      { email },
+      { bio, experienceYears, location, workSamples: uploadedImages },
+      { new: true }
+    );
+
+    if (!updatedArtisan) return res.status(404).json({ message: 'Artisan not found' });
+
+    res.status(200).json({ success: true, message: 'Onboarding successful' });
+  } catch (error) {
+    res.status(400).json({ error: error.message });
   }
 };
 
-// GET ALL ARTISANS (admin only)
-exports.getAllArtisans = async (req, res) => {
+// Get artisan account details by ID
+const getAccDetails = async (req, res) => {
+  const { id } = req.params;
+
+  if (!mongoose.Types.ObjectId.isValid(id)) return res.status(404).json({ message: 'Invalid artisan ID' });
+
+  const artisan = await Artisan.findById(id);
+  if (!artisan) return res.status(404).json({ message: 'Artisan not found' });
+
+  res.status(200).json(artisan);
+};
+
+// Get all verified artisans (public)
+const getArtisans = async (req, res) => {
   try {
-    const artisans = await Artisan.find().select("-password");
+    const filter = { isEmailVerified: true };
+    if (req.query.serviceType) filter.serviceType = req.query.serviceType;
+    if (req.query.city) filter['location.city'] = req.query.city;
+
+    const artisans = await Artisan.find(filter).select('-password');
     res.status(200).json(artisans);
-  } catch (err) {
-    res.status(500).json({
-      message: "Failed to fetch artisans",
-      error: err.message,
-    });
+  } catch (error) {
+    res.status(500).json({ message: 'Failed to fetch artisans', error: error.message });
   }
 };
 
+// Get artisan by ID
+const getArtisanById = async (req, res) => {
+  const { id } = req.params;
+
+  if (!mongoose.Types.ObjectId.isValid(id)) return res.status(400).json({ message: 'Invalid artisan ID' });
+
+  const artisan = await Artisan.findById(id).select('-password');
+  if (!artisan || !artisan.isEmailVerified) return res.status(404).json({ message: 'Artisan not found' });
+
+  res.status(200).json(artisan);
+};
+
+// Admin: get all artisans
+const getAllArtisans = async (req, res) => {
+  try {
+    const artisans = await Artisan.find().select('-password');
+    res.status(200).json(artisans);
+  } catch (error) {
+    res.status(500).json({ message: 'Failed to fetch artisans', error: error.message });
+  }
+};
+
+// Placeholder: featured/top artisans
+const getFeaturedArtisans = async (req, res) => res.json({ message: 'getFeaturedArtisans controller' });
+const getTopArtisans = async (req, res) => res.json({ message: 'getTopArtisans controller' });
+
+// ---------------------- Export all ----------------------
+module.exports = {
+  createArtisan,
+  loginArtisan,
+  verifyArtisanEmail,
+  resendOtp,
+  onboarding,
+  getAccDetails,
+  getArtisans,
+  getArtisanById,
+  getAllArtisans,
+  getFeaturedArtisans,
+  getTopArtisans
+};

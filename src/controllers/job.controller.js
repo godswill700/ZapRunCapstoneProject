@@ -1,11 +1,11 @@
 const Job = require("../models/Job");
 
-// CREATE a job (only artisan or admin)
-exports.createJob = async (req, res) => {
+// CREATE a job
+const createJob = async (req, res) => {
   try {
     const job = await Job.create({
       ...req.body,
-      createdBy: req.artisan._id, // attach logged-in user
+      createdBy: req.user._id, // use req.user if middleware attaches logged-in user
     });
     res.status(201).json(job);
   } catch (err) {
@@ -14,7 +14,7 @@ exports.createJob = async (req, res) => {
 };
 
 // GET all jobs (admin only)
-exports.getAllJobs = async (req, res) => {
+const getJobs = async (req, res) => {
   try {
     const jobs = await Job.find()
       .populate("assignedArtisan", "name email serviceType")
@@ -25,25 +25,44 @@ exports.getAllJobs = async (req, res) => {
   }
 };
 
-// GET jobs for logged-in artisan
-exports.getMyJobs = async (req, res) => {
+// GET job by ID
+const getJobById = async (req, res) => {
   try {
-    const jobs = await Job.find({ createdBy: req.artisan._id })
-      .populate("assignedArtisan", "name email serviceType");
-    res.status(200).json(jobs);
+    const job = await Job.findById(req.params.id)
+      .populate("assignedArtisan", "name email serviceType")
+      .populate("createdBy", "name email");
+    if (!job) return res.status(404).json({ message: "Job not found" });
+    res.status(200).json(job);
   } catch (err) {
-    res.status(500).json({ message: "Failed to fetch your jobs", error: err.message });
+    res.status(500).json({ message: "Failed to fetch job", error: err.message });
   }
 };
 
-// UPDATE job status (artisan/admin)
-exports.updateJobStatus = async (req, res) => {
+// Assign job to artisan (admin only)
+const assignJob = async (req, res) => {
   try {
     const job = await Job.findById(req.params.id);
     if (!job) return res.status(404).json({ message: "Job not found" });
 
-    // Only admin or assigned artisan can update
-    if (req.artisan.role !== "admin" && (!job.assignedArtisan || !job.assignedArtisan.equals(req.artisan._id))) {
+    job.assignedArtisan = req.body.artisanId;
+    await job.save();
+
+    res.status(200).json(job);
+  } catch (err) {
+    res.status(500).json({ message: "Failed to assign job", error: err.message });
+  }
+};
+
+// UPDATE job status
+const updateJobStatus = async (req, res) => {
+  try {
+    const job = await Job.findById(req.params.id);
+    if (!job) return res.status(404).json({ message: "Job not found" });
+
+    if (
+      req.user.role !== "admin" &&
+      (!job.assignedArtisan || !job.assignedArtisan.equals(req.user._id))
+    ) {
       return res.status(403).json({ message: "Forbidden: cannot update this job" });
     }
 
@@ -54,4 +73,13 @@ exports.updateJobStatus = async (req, res) => {
   } catch (err) {
     res.status(500).json({ message: "Failed to update job", error: err.message });
   }
+};
+
+// EXPORT all handlers
+module.exports = {
+  createJob,
+  getJobs,
+  getJobById,
+  assignJob,
+  updateJobStatus,
 };

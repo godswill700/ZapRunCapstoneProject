@@ -1,19 +1,20 @@
 const express = require("express");
 const router = express.Router();
-const jobController = require("../controllers/job.controller");
 const protect = require("../middlewares/auth.middleware");
 const authorize = require("../middlewares/roles.middleware");
+const jobController = require("../controllers/job.controller");
 
-// Create a job (artisan or admin)
-router.post("/", protect, authorize("artisan", "admin"), jobController.createJob);
+// User creates job
+router.post("/", protect, authorize("user"), jobController.createJob);
 
-// Get jobs for admin only
-router.get("/all", protect, authorize("admin"), jobController.getAllJobs);
+// Get all jobs (any logged-in user)
+router.get("/", protect, jobController.getJobs);
+router.get("/:id", protect, jobController.getJobById);
 
-// Get logged-in artisan's jobs
-router.get("/my", protect, authorize("artisan", "admin"), jobController.getMyJobs);
+// Admin assigns artisan
+router.patch("/:id/assign", protect, authorize("admin"), jobController.assignJob);
 
-// Update job status
-router.patch("/:id", protect, authorize("artisan", "admin"), jobController.updateJobStatus);
+// Artisan updates job status
+router.patch("/:id/status", protect, authorize("artisan"), jobController.updateJobStatus);
 
 module.exports = router;

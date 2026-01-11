@@ -37,6 +37,10 @@ const artisanSchema = new mongoose.Schema({
     required: true,
   },
   // Verification
+  isEmailVerified: {
+    type: Boolean,
+    default: false
+  },
   idCard: {
     type: String,
   },
@@ -63,7 +67,7 @@ const artisanSchema = new mongoose.Schema({
   },
   role: { 
     type: String, 
-    enum: ['artisan', 'admin'], default: 'artisan' } // NEW
+    enum: ['artisan', 'admin'], default: 'artisan' }
   },
 { timestamps: true });
 
