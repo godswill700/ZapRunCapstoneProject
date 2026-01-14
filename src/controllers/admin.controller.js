@@ -102,7 +102,7 @@ const loginAdmin = async (req, res) => {
 
     const admin = await Admin.findOne({ email });
     if (!admin) {
-      return res.status(401).json({ message: "Invalid credentials" });
+      return res.status(401).json({ message: "Admin with this email doesn't exist" });
     }
 
     if (!admin.isVerified) {

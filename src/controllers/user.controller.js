@@ -17,10 +17,10 @@ const generateToken = (id) => {
 
 // ================= REGISTER USER =================
 const registerUser = async (req, res) => {
-  const { name, email, password } = req.body;
+  const { fullName, email, password } = req.body;
 
   try {
-    if (!name || !email || !password) {
+    if (!fullName || !email || !password) {
       return res.status(400).json({ message: "All fields are required" });
     }
 
@@ -40,7 +40,7 @@ const registerUser = async (req, res) => {
       return res.status(400).json({ message: "Email already registered" });
     }
 
-    const user = await User.create({ name, email, password });
+    const user = await User.create({ fullName, email, password });
 
     await sendOtp(user.email, res);
   } catch (error) {
@@ -90,7 +90,7 @@ const loginUser = async (req, res) => {
       return res.status(400).json({ message: "All fields are required" });
     }
 
-    const user = await User.findOne({ email });
+    const user = await User.findOne({ email }).select('+password');
     if (!user) {
       return res.status(401).json({ message: "Invalid credentials" });
     }
@@ -99,14 +99,16 @@ const loginUser = async (req, res) => {
       return res.status(403).json({ message: "Please verify your email" });
     }
 
-    const isMatch = await bcrypt.compare(password, user.password);
+    const isMatch = await user.matchPassword(password);
     if (!isMatch) {
       return res.status(401).json({ message: "Invalid credentials" });
     }
 
+    const token = generateToken(user._id);
+
     res.status(200).json({
       success: true,
-      token: generateToken(user._id),
+      token,
       user: {
         id: user._id,
         name: user.name,

@@ -11,7 +11,7 @@ const { uploadToCloudinary } = require('../middlewares/workSamplesUpload');
 
 // Create JWT token
 const createToken = (_id) => {
-  return jwt.sign({ _id }, process.env.SECRET, { expiresIn: '2d' });
+  return jwt.sign({ _id }, process.env.JWT_SECRET, { expiresIn: '30d' });
 };
 
 // ---------------------- Controllers ----------------------
@@ -123,10 +123,10 @@ const resendOtp = async (req, res) => {
 
 // Onboarding (upload work samples)
 const onboarding = async (req, res) => {
-  const { email, bio, experienceYears, location } = req.body;
+  const { email, bio, experienceYears } = req.body;
 
   try {
-    if (!email || !bio || !experienceYears || !location) {
+    if (!email || !bio || !experienceYears) {
       return res.status(400).json({ message: 'All fields are required' });
     }
 
@@ -139,7 +139,7 @@ const onboarding = async (req, res) => {
 
     const updatedArtisan = await Artisan.findOneAndUpdate(
       { email },
-      { bio, experienceYears, location, workSamples: uploadedImages },
+      { bio, experienceYears, workSamples: uploadedImages },
       { new: true }
     );
 

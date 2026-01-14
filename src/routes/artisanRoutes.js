@@ -1,5 +1,6 @@
 const express = require("express");
 const router = express.Router();
+const { upload } = require('../middlewares/workSamplesUpload');
 const protect = require("../middlewares/auth.middleware");
 const authorize = require("../middlewares/roles.middleware");
 const artisanController = require("../controllers/artisan.controller");
@@ -7,6 +8,12 @@ const artisanController = require("../controllers/artisan.controller");
 // Public routes
 router.post("/register", artisanController.createArtisan);
 router.post("/login", artisanController.loginArtisan);
+
+// Verification routes via otp and onboarding
+router.post("/verify-email", artisanController.verifyArtisanEmail);
+router.post("/resend-otp", artisanController.resendOtp);
+router.post("/onboard", upload.array("images", 10), artisanController.onboarding);
+
 
 // Protected routes
 router.get("/profile/me", protect, authorize("artisan"), (req, res) => {

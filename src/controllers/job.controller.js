@@ -1,4 +1,5 @@
 const Job = require("../models/Job");
+const { createChatForJob } = require('./chat.controller');
 
 // CREATE a job
 const createJob = async (req, res) => {
@@ -46,6 +47,9 @@ const assignJob = async (req, res) => {
 
     job.assignedArtisan = req.body.artisanId;
     await job.save();
+
+    // Create Chat for Job when job has been assigned
+    await createChatForJob(job._id, job.createdBy, job.assignedArtisan);
 
     res.status(200).json(job);
   } catch (err) {
