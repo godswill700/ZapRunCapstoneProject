@@ -1,12 +1,10 @@
 const { google } = require('googleapis');
 const nodemailer = require('nodemailer');
 
-const {
-  AUTH_EMAIL,
-  CLIENT_ID,
-  CLIENT_SECRET,
-  REFRESH_TOKEN
-} = process.env;
+const AUTH_EMAIL = process.env.AUTH_EMAIL;
+const CLIENT_ID = process.env.CLIENT_ID;
+const CLIENT_SECRET = process.env.CLIENT_SECRET;
+const REFRESH_TOKEN = process.env.REFRESH_TOKEN;
 
 const REDIRECT_URI = "https://developers.google.com/oauthplayground";
 
@@ -22,7 +20,7 @@ const createTransporter = async () => {
   try {
     const accessToken = await oAuth2Client.getAccessToken();
 
-    return nodemailer.createTransport({
+    const transporter = nodemailer.createTransport({
       service: "gmail",
       auth: {
         type: "OAuth2",
@@ -30,9 +28,10 @@ const createTransporter = async () => {
         clientId: CLIENT_ID,
         clientSecret: CLIENT_SECRET,
         refreshToken: REFRESH_TOKEN,
-        accessToken: accessToken.token,
       },
     });
+
+    return transporter;
   } catch (error) {
     console.error("Error creating transporter:", error.message);
     throw new Error("Failed to create mail transporter");
