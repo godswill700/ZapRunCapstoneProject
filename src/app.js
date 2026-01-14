@@ -1,5 +1,4 @@
 
-
 const express = require("express");
 const cors = require("cors");
 const dotenv = require("dotenv");
@@ -23,10 +22,23 @@ app.use("/api/users", require("./routes/userRoutes"));
 app.use("/api/artisans", require("./routes/artisanRoutes"));
 app.use("/api/admin", require("./routes/adminRoutes"));
 app.use("/api/jobs", require("./routes/jobRoutes"));
+app.use("/api/users/discover", require("./routes/usersearchRoutes"));
+
 
 // Test homepage
 app.get("/", (req, res) => {
-  res.send("ZAPRun API is running 🚀");
+  res.send("ZAPRun API is running....");
 });
 
+
 module.exports = app;
+
+
+
+
+
+
+
+
+
+
