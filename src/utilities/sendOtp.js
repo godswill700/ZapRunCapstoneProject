@@ -1,5 +1,5 @@
 const bcrypt = require('bcrypt');
-const Otp = require('../models/otpModel');
+const Otp = require('../models/OtpModel');
 const createTransporter = require('../config/nodemailerConfig');
 
 const sendOtp = async (email, res) => {
