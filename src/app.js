@@ -16,6 +16,12 @@ app.use(express.json());
 // Parse URL-encoded bodies (optional, for forms)
 app.use(express.urlencoded({ extended: true }));
 
+// Middleware to display where the request is coming from and also what method
+app.use((req, res, next) => {
+  console.log(req.path, req.method);
+  next();
+})
+
 // Routes
 app.use("/api/users", require("./routes/userRoutes"));
 app.use("/api/artisans", require("./routes/artisanRoutes"));
